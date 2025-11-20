@@ -1,0 +1,130 @@
+**Gestionnaire de Ressources d'Apprentissage Offline (Resource Manager App)**.
+
+Ce prompt couvre l'architecture, la liste des ressources à gérer, et toutes les fonctionnalités demandées.
+
+-----
+
+# 🎯 Prompt de Développement pour le Gestionnaire de Ressources Offline (Resource Manager App)
+
+## 1\. Objectif du Projet
+
+L'objectif est de créer une application web conteneurisée (le **Resource Manager App**) qui sert de **tableau de bord central** pour gérer, lancer et naviguer vers diverses plateformes d'apprentissage et environnements de laboratoire (Labs) hors ligne, tous déployés via Docker sur un hôte unique.
+
+## 2\. Architecture Technique et Stack
+
+Le projet sera entièrement géré par **Docker Compose** et l'application devra communiquer avec le démon Docker de l'hôte.
+
+| Composant | Description | Recommandation Technique |
+| :--- | :--- | :--- |
+| **Orchestration** | Déploiement de l'application et de tous les services de ressources. | **Docker Compose** |
+| **Accès Docker Daemon** | Pour que l'application de gestion puisse lister, démarrer et arrêter les autres conteneurs. | Utiliser un **Socat Proxy** (tel que suggéré : `alpine/socat`) pour exposer le socket Docker en TCP à l'intérieur du réseau Docker Compose (port `2375`). |
+| **Base de Données** | Stockage léger et persistant pour les métadonnées de l'application. | **SQLite** (idéal pour un conteneur simple) ou **PostgreSQL/MySQL** léger dans un autre conteneur. |
+| **Backend App** | Logique métier, communication avec le proxy Socat (API Docker), gestion de la base de données. | **Python (Flask/FastAPI)** ou **Node.js (Express)**. |
+| **Frontend App** | L'interface utilisateur, responsable de l'affichage du dashboard. | **HTML/CSS/JS (vanilla)**, **Vue.js**, ou **React**. |
+
+### Configuration du Proxy Socat (Obligatoire)
+
+Le fichier `docker-compose.yml` doit inclure le service `docker-proxy` :
+
+```yaml
+services:
+  # ... votre application de gestion
+  docker-proxy:
+    image: alpine/socat
+    container_name: docker-proxy
+    restart: unless-stopped
+    command: tcp-listen:2375,fork,reuseaddr unix-connect:/var/run/docker.sock
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+```
+
+Le Resource Manager App devra utiliser l'adresse `http://docker-proxy:2375` pour interagir avec l'API Docker.
+
+-----
+
+## 3\. Liste Exhaustive des Ressources à Gérer
+
+L'application doit être capable de gérer et d'initialiser les conteneurs suivants (la liste sera stockée dans la base de données de l'application) :
+
+### A. Domaine : Développement
+
+| Nom de la Ressource | Domaine | Image Docker de Référence | Port d'Accès (Interne/Hôte) |
+| :--- | :--- | :--- | :--- |
+| **DevDocs Offline** | Documentation API | `montyfi/devdocs` (ou équivalent) | 80 / 8080 |
+| **W3Schools Offline** | Tutoriels Web | `ja7adr/w3schools` (ou équivalent) | 80 / 8081 |
+| **Doc Python** | Documentation Python | *Image de documentation miroir* | 80 / 8082 |
+
+### B. Domaine : DevOps
+
+| Nom de la Ressource | Domaine | Image Docker de Référence | Port d'Accès (Interne/Hôte) |
+| :--- | :--- | :--- | :--- |
+| **Gitea Server** | Serveur Git léger | `gitea/gitea:latest` | 3000 / 3000 |
+| **Prometheus** | Monitoring | `prom/prometheus` | 9090 / 9090 |
+| **Grafana** | Visualisation de métriques | `grafana/grafana` | 3000 / 3001 |
+
+### C. Domaine : Cybersécurité (Vulnerable Labs)
+
+| Nom de la Ressource | Domaine | Image Docker de Référence | Port d'Accès (Interne/Hôte) |
+| :--- | :--- | :--- | :--- |
+| **OWASP Juice Shop** | Vulnérabilité Web | `bkimminich/juice-shop` | 3000 / 4000 |
+| **DVWA** | App Web Vulnérable | `vulnerables/web-dvwa` | 80 / 4001 |
+
+-----
+
+## 4\. Fonctionnalités Détaillées de l'Application
+
+### 4.1. Dashboard (Vue Principale)
+
+Le tableau de bord doit présenter la liste de toutes les ressources (celles de la section 3 et celles ajoutées par l'utilisateur).
+
+  * **Affichage des Données :**
+      * Nom de la Ressource.
+      * Description courte (stockée en base de données).
+      * **État en Temps Réel** (via API Docker) : `Running`, `Stopped`, `Image Not Found` (image non téléchargée).
+      * **Port d'Accès** : Afficher le port mappé sur l'hôte (ex: `http://localhost:8080`). Ce doit être un lien cliquable.
+
+### 4.2. Gestion des Conteneurs (Actions Docker)
+
+L'application doit permettre l'exécution des commandes Docker via l'API (à travers le proxy Socat).
+
+  * **Démarrer :** Lancer un conteneur arrêté ou l'initialiser s'il n'existe pas encore (commande `docker run` ou `docker compose up` pour les services définis).
+  * **Arrêter :** Stopper un conteneur en cours d'exécution (commande `docker stop`).
+  * **Redémarrer :** Arrêter puis démarrer.
+  * **Télécharger l'Image (Pull) :** Exécuter `docker pull <image_name>` pour télécharger l'image sans la lancer. Le statut en base de données doit passer à `Available` ou `Ready to Run`.
+
+### 4.3. Gestion des Images (Mise à Jour)
+
+  * **Mise à Jour (Update) :** Pour une ressource existante, effectuer la séquence suivante :
+    1.  `docker stop <container_name>` (si actif).
+    2.  `docker pull <image_name>` (télécharger la dernière version).
+    3.  `docker rm <container_name>` (supprimer l'ancien conteneur).
+    4.  **Recréer/Démarrer** le conteneur avec la nouvelle image.
+
+### 4.4. Gestion des Données (Base de Données Légère)
+
+Toutes les métadonnées des ressources doivent être stockées dans la base de données (SQLite/PostgreSQL).
+
+  * **Structure de la BD :** Nécessite au moins les champs suivants pour chaque ressource :
+      * `id`
+      * `name` (Nom convivial)
+      * `docker_image_name` (Ex: `bkimminich/juice-shop`)
+      * `internal_port` (Port exposé dans le conteneur)
+      * `host_port` (Port mappé sur l'hôte)
+      * `description`
+      * `domain` (Développement, DevOps, Cybersécurité)
+      * `is_active` (Booléen, pour masquer des ressources obsolètes)
+  * **Historique/Cache :**
+      * Implémenter un champ `last_consulted_date` pour chaque ressource afin d'afficher une section **"Ressources récemment consultées"** sur le dashboard.
+
+### 4.5. Ajout de Nouvelles Ressources (Formulaire)
+
+L'application doit proposer un formulaire permettant à l'utilisateur d'ajouter une nouvelle ressource à la liste.
+
+  * **Champs du Formulaire :**
+      * Nom de la Ressource.
+      * Nom de l'Image Docker (Ex: `nginx:latest`).
+      * Port Interne (Target Port).
+      * Port de l'Hôte (Host Port) - **Doit vérifier la disponibilité du port avant d'enregistrer.**
+      * Description et Domaine.
+
+L'ajout dans le formulaire ne doit faire qu'enregistrer la ressource dans la BD ; l'image est téléchargée/lancée via les actions du Dashboard.
