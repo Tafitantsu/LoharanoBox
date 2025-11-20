@@ -18,9 +18,9 @@ Fournir un dashboard local pour inventorier, démarrer, arrêter, mettre à jour
 ## Architecture & Stack
 - Orchestration : Docker Compose
 - Accès Docker Daemon : Socat proxy (expose le socket Docker en TCP dans le réseau Compose)
-- Backend : Python (FastAPI/Flask) ou Node.js (Express)
-- Frontend : HTML/CSS/JS (ou Vue/React léger)
-- Base de données : SQLite (ou PostgreSQL/MySQL si besoin)
+- Backend : Python (FastAPI+SQLAlchemy)
+- Frontend : HTML/CSS/JS (React Typescript)
+- Base de données : PostgreSQL
 
 ### Recommandations
 - L'application appelle l'API Docker via `http://docker-proxy:2375`.
@@ -78,9 +78,10 @@ Les ressources sont classées par domaine. Chaque ressource stocke : nom, image,
 
 ## Base de données (schéma minimum)
 Champs essentiels pour chaque ressource :
-- id (int)
+- id (UUID)
 - name (string)
 - docker_image_name (string)
+- docker_image_tag (string)
 - internal_port (int)
 - host_port (int)
 - description (string)
@@ -91,13 +92,14 @@ Champs essentiels pour chaque ressource :
 ## Formulaire d'ajout de ressource
 Champs du formulaire :
 - Nom de la ressource
-- Nom de l'image Docker (ex: nginx:latest)
+- Nom de l'image Docker (ex: nginx)
+- Tag de l'image Docker (ex: latest)
 - Port interne (target)
 - Port hôte (host) — l'application doit vérifier que le port est libre avant enregistrement
 - Description
 - Domaine (Développement / DevOps / Cybersécurité / Autre)
 
-Remarque : l'ajout en base n'effectue pas automatiquement le pull ni le démarrage de l'image : ces opérations se font via les actions du dashboard.
+Remarque : l'ajout en base n'effectue pas automatiquement le pull ni le démarrage de l'image : ces opérations se font via les actions du dashboard. Mais par contre, l'utilisateur sera demander s'il veut immédiatement effectué le pull de l'image à condition que la connexion internet soit disponible
 
 ## Démarrage rapide
 1. Démarrer Docker et ajouter le service `docker-proxy` dans votre `docker-compose.yml` comme ci‑dessus.
@@ -108,4 +110,4 @@ Remarque : l'ajout en base n'effectue pas automatiquement le pull ni le démarra
 
 Contribuer / Licence
 - README volontairement concis : ajouter exemples d'API (endpoints), captures d'écran ou tutoriels d'installation si besoin.
-- Choisir une licence et ajouter un fichier LICENSE si le projet est destiné au public.
+- Choisir une licence et ajouter un fichier LICENSE car le projet est destiné au public pour le moment.
