@@ -1,0 +1,140 @@
+# Auth Service – FastAPI Microservice
+
+Ce projet est un microservice d'authentification basé sur **FastAPI**, **PostgreSQL**, **SQLAlchemy**, et **Alembic**.
+
+## 📁 Arborescence du projet
+
+auth_service/
+├── alembic.ini
+├── .env
+├── main.py
+├── requirements.txt
+├── .gitignore
+├── README.md
+├── app/
+│ ├── api/
+│ │ └── v1/
+│ │ ├── init.py
+│ │ └── auth.py
+│ ├── core/
+│ │ ├── config.py
+│ │ ├── jwt.py
+│ │ └── security.py
+│ ├── db/
+│ │ ├── base.py
+│ │ ├── init_db.py
+│ │ └── session.py
+│ ├── models/
+│ │ └── user.py
+│ ├── repositories/
+│ │ └── user_repository.py
+│ ├── schemas/
+│ │ ├── auth.py
+│ │ └── user.py
+│ └── services/
+│   └── auth_service.py
+├── migrations/
+│ ├── env.py
+│ └── versions/
+
+
+---
+
+## ✅ Prérequis
+
+- Python 3.10+
+- PostgreSQL 12+
+- [pipenv](https://pipenv.pypa.io/en/latest/) ou `venv`
+- Alembic
+
+---
+
+## ⚙️ Installation
+
+1. Cloner le dépôt :
+   ```bash
+   git clone https://github.com/votre-utilisateur/auth_service.git
+   cd auth_service
+
+    Créer un environnement virtuel et installer les dépendances :
+
+python -m venv venv
+source venv/bin/activate  # Windows : venv\Scripts\activate
+pip install -r requirements.txt
+
+Configurer les variables d’environnement :
+
+    # .env
+    POSTGRES_HOST=localhost
+    POSTGRES_PORT=5432
+    POSTGRES_DB=auth_db
+    POSTGRES_USER=postgres
+    POSTGRES_PASSWORD=yourpassword
+    JWT_SECRET_KEY=your_jwt_secret
+
+    Créer la base de données PostgreSQL (si elle n’existe pas) via psql ou un outil comme pgAdmin.
+
+▶️ Lancer le service
+
+uvicorn main:app --reload
+
+L’API est alors accessible sur :
+http://127.0.0.1:8000
+
+La documentation interactive se trouve sur :
+http://127.0.0.1:8000/docs
+🧬 Gestion des migrations avec Alembic
+Initialisation (déjà faite)
+
+alembic init migrations
+
+Configurer Alembic
+
+Dans alembic.ini :
+
+sqlalchemy.url = postgresql+psycopg2://postgres:yourpassword@localhost:5432/auth_db
+
+Dans migrations/env.py :
+
+from app.db.base import Base
+from app.models.user import User  # Important : importer tous les modèles
+target_metadata = Base.metadata
+
+Créer une migration
+
+alembic revision --autogenerate -m "create user table"
+
+Cela génère un fichier dans migrations/versions/.
+Appliquer la migration
+
+alembic upgrade head
+
+📦 Structure des modules
+
+    app/models/ : Modèles SQLAlchemy
+
+    app/schemas/ : Schémas Pydantic
+
+    app/repositories/ : Accès aux données
+
+    app/services/ : Logique métier
+
+    app/api/v1/ : Routes API versionnées
+
+    app/core/ : Configuration, sécurité, JWT
+
+    app/db/ : Sessions DB et base Alembic
+
+🛠 À faire
+
+    Ajouter les tests unitaires
+
+    Ajouter un middleware de logging
+
+    Ajouter une gestion fine des erreurs
+
+    Ajouter un système de permissions
+
+🧑‍💻 Auteur
+
+Développé par Manou

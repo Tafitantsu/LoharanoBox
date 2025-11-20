@@ -1,6 +1,3 @@
-# JWT utility functions for token creation and validation examples.
-
-
 from datetime import datetime, timedelta
 from typing import Any, Optional
 
@@ -9,9 +6,9 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends, HTTPException
 
 from app.core.config import settings
-from app.schemas.token import TokenPayload
+from app.schemas.auth import TokenPayload
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 def create_access_token(
     data: dict[str, Any],

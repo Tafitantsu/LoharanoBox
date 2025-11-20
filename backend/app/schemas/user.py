@@ -1,59 +1,17 @@
-import uuid
-from pydantic import BaseModel, EmailStr, ConfigDict
-from typing import Optional, List
+from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
+from uuid import UUID
 
-# Permission Schemas
-class PermissionBase(BaseModel):
-    nom: str
-
-class PermissionCreate(PermissionBase):
-    pass
-
-class PermissionUpdate(PermissionBase):
-    pass
-
-class PermissionInDB(PermissionBase):
-    model_config = ConfigDict(from_attributes=True)
-    id: uuid.UUID
-
-# Role Schemas
-class RoleBase(BaseModel):
-    nom: str
-
-class RoleCreate(RoleBase):
-    pass
-
-class RoleUpdate(RoleBase):
-    pass
-
-class RoleInDB(RoleBase):
-    model_config = ConfigDict(from_attributes=True)
-    id: uuid.UUID
-    permissions: List[PermissionInDB] = []
-
-# User Schemas
 class UserBase(BaseModel):
-    email: EmailStr
+    username: str = Field(..., min_length=3, max_length=50, example="johndoe")
+    email: EmailStr = Field(..., example="johndoe@example.com")
 
 class UserCreate(UserBase):
-    mot_de_passe: str
-    role_id: uuid.UUID
+    password: str = Field(..., min_length=8, example="strongpassword123")
 
-class UserRegister(UserBase):
-    mot_de_passe: str
+class UserResponse(UserBase):
+    id: UUID
+    created_at: datetime
 
-class UserUpdate(UserBase):
-    email: Optional[EmailStr] = None
-    mot_de_passe: Optional[str] = None
-    role_id: Optional[uuid.UUID] = None
-    actif: Optional[bool] = None
-
-class UserInDB(UserBase):
-    model_config = ConfigDict(from_attributes=True)
-    id: uuid.UUID
-    date_creation: datetime
-    role: Optional[RoleInDB] = None
-
-class UserManage(UserInDB):
-    actif: bool
+    class Config:
+        from_attributes = True

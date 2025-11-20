@@ -1,0 +1,52 @@
+# Environnements Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.venv
+.venv/
+venv/
+ENV/
+env/
+
+# Fichiers de logs
+*.log
+
+# Fichiers temporaires
+*.tmp
+*.bak
+*.swp
+*~
+
+# Alembic
+migrations/__pycache__/
+migrations/versions/__pycache__/
+
+# VSCode
+.vscode/
+
+# Mac OS
+.DS_Store
+
+# Docker
+*.pid
+*.db
+docker-compose.override.yml
+
+# Test
+.coverage
+htmlcov/
+.tox/
+pytest_cache/
+.cache/
+nosetests.xml
+coverage.xml
+*.cover
+*.pytest_cache
+
+# mypy
+.mypy_cache/
+
+# IDEs
+.idea/
+*.iml
